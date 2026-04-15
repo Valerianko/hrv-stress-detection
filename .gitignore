@@ -1,0 +1,8 @@
+venv/
+.venv/
+.idea/
+__pycache__/
+data/
+models_saved/
+.env
+*.pkl

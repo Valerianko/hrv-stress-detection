@@ -21,9 +21,9 @@ def extract_features(rr_intervals: np.ndarray) -> Dict[str, Union[float, int]]:
         lf_band = (0.04, 0.15)
         hf_band = (0.15, 0.40)
 
-        lf_power = np.trapz(pxx[(f >= lf_band[0]) & (f <= lf_band[1])],
+        lf_power = np.trapezoid(pxx[(f >= lf_band[0]) & (f <= lf_band[1])],
                             f[(f >= lf_band[0]) & (f <= lf_band[1])])
-        hf_power = np.trapz(pxx[(f >= hf_band[0]) & (f <= hf_band[1])],
+        hf_power = np.trapezoid(pxx[(f >= hf_band[0]) & (f <= hf_band[1])],
                             f[(f >= hf_band[0]) & (f <= hf_band[1])])
 
         features['lf_power'] = lf_power

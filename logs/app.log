@@ -5,3 +5,4 @@
 2026-04-16 22:03:39,709 - SHAP_Explainer - INFO - Генерация SHAP Summary Plot...
 2026-04-16 22:03:41,956 - SHAP_Explainer - INFO - График SHAP успешно сохранен в: C:\Documents\University\4 course\8 semester\HRV\Hrv_stress_system\reports\figures\shap_summary_svm.png
 2026-04-16 22:16:34,283 - Inference - INFO - StressAnalyzer успешно инициализирован (модель загружена).
+2026-04-16 22:20:49,266 - Inference - INFO - StressAnalyzer успешно инициализирован (модель загружена).

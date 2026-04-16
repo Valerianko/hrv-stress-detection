@@ -26,11 +26,9 @@ class StressAnalyzer:
         start_time = time.time()
 
         try:
-            # Экстракция признаков (если fast, нелинейные не считаются)
             features = extract_features(rr_intervals, calc_nonlinear=not fast_mode)
             df_feat = pd.DataFrame([features])
 
-            # Выбор модели и признаков
             if fast_mode:
                 df_feat = df_feat.drop(columns=['sampen', 'corr_dim'], errors='ignore')
                 model = self.model_fast
@@ -40,22 +38,24 @@ class StressAnalyzer:
             df_feat.replace([np.inf, -np.inf], np.nan, inplace=True)
             df_feat.fillna(0, inplace=True)
 
-            # Инференс
-            pred = model.predict(df_feat)[0]
-            prob = model.predict_proba(df_feat)[0][pred]
+            # Истинная вероятность (Вероятность класса 1 - СТРЕСС)
+            proba_array = model.predict_proba(df_feat)[0]
+            stress_prob = float(proba_array[1])  # Берем именно вероятность стресса
 
-            status = "СТРЕСС" if pred == 1 else "ПОКОЙ"
+            # Вердикт строго по порогу 0.5
+            pred_class = 1 if stress_prob >= 0.5 else 0
+            status = "СТРЕСС" if pred_class == 1 else "ПОКОЙ"
+
             proc_time = time.time() - start_time
 
             return {
                 "status": status,
-                "probability": float(prob) if pred == 1 else 1 - float(prob),
-                # Вероятность именно стресса (для графика)
+                "probability": stress_prob,
                 "processing_time_sec": round(proc_time, 3),
                 "features": features,
                 "mode": "Fast" if fast_mode else "Full",
                 "error": None
             }
         except Exception as e:
-            logger.error(f"Ошибка инференса: {e}")
+            logger.error(f"Ошибка инференса (Fast: {fast_mode}, Удары: {len(rr_intervals)}): {str(e)}")
             return {"error": str(e)}

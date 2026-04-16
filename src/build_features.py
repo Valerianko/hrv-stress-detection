@@ -11,6 +11,7 @@ def main():
     print("Старт генерации признакового пространства...")
     all_features = []
     all_labels = []
+    all_groups = []
 
     for sub_id in DEFAULT_SUBJECTS:
         file_path = os.path.join(DATA_DIR, f"{sub_id}.pkl")
@@ -28,23 +29,24 @@ def main():
         print(f"  -> Извлечено {len(rr_windows)} окон. Считаем признаки...")
 
         for i, rr in enumerate(rr_windows):
+            # calc_nonlinear=True, так как для обучения нам нужны все признаки (Full mode)
             feats = extract_features(rr)
             all_features.append(feats)
             all_labels.append(y_labels[i])
+            all_groups.append(sub_id)  # Сохраняем ID субъекта
 
     # Формируем итоговый DataFrame
     df_features = pd.DataFrame(all_features)
     df_features['target_label'] = all_labels
+    df_features['subject_id'] = all_groups  # Колонка для GroupKFold/LOSO
 
-    # Очистка от бесконечностей (защита от деления на 0 в LF/HF)
+    # Очистка
     df_features.replace([np.inf, -np.inf], np.nan, inplace=True)
     df_features.fillna(0, inplace=True)
 
-    # Сохраняем в CSV
     output_path = os.path.join(DATA_DIR, 'processed_features.csv')
     df_features.to_csv(output_path, index=False)
     print(f"Готово! Датасет сохранен в: {output_path}")
-    print(f"Размерность: {df_features.shape}")
 
 
 if __name__ == "__main__":

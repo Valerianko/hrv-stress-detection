@@ -48,10 +48,26 @@ def main():
     plt.figure(figsize=(10, 6))
     shap.summary_plot(shap_values, X_sample, show=False)
 
-    fig_path = os.path.join(FIGURES_DIR, 'shap_summary_svm.png')
-    plt.tight_layout()
-    plt.savefig(fig_path, dpi=300, bbox_inches='tight')
-    logger.info(f"График SHAP успешно сохранен в: {fig_path}")
+    # Локальная интерпретация (Local Explanation) для одного окна со стрессом
+    logger.info("Генерация локального объяснения (Local Explanation)...")
+
+    # Находим индекс окна, где реально был стресс
+    stress_indices = df[df['target_label'] == 1].index
+    if len(stress_indices) > 0:
+        sample_idx = stress_indices[0]
+        instance = X.iloc[sample_idx]
+
+        shap_val_single = explainer.shap_values(instance.to_frame())
+
+        base_value = explainer.expected_value
+
+        plt.figure(figsize=(12, 4))
+        shap.force_plot(base_value, shap_val_single, instance, matplotlib=True, show=False)
+
+        fig_path_local = os.path.join(FIGURES_DIR, 'shap_local_explanation.png')
+        plt.savefig(fig_path_local, dpi=300, bbox_inches='tight')
+        plt.close()
+        logger.info(f"Локальное объяснение сохранено в: {fig_path_local}")
 
 
 if __name__ == "__main__":

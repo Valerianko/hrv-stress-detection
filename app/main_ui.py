@@ -23,6 +23,7 @@ if 'history_proc_time' not in st.session_state: st.session_state.history_proc_ti
 if 'last_result' not in st.session_state: st.session_state.last_result = None
 if 'prev_metrics' not in st.session_state: st.session_state.prev_metrics = None
 if 'current_subject' not in st.session_state: st.session_state.current_subject = None
+if 'history_hr' not in st.session_state: st.session_state.history_hr =[]
 
 
 @st.cache_resource
@@ -63,32 +64,38 @@ def plot_attractor(rr, delay=1):
     return fig
 
 
-def plot_trend():
-    fig = go.Figure()
+from plotly.subplots import make_subplots  # Добавь этот импорт сверху
 
-    # Цветовые зоны (Зеленая - Покой, Красная - Стресс)
-    fig.add_hrect(y0=0.0, y1=0.5, fillcolor="green", opacity=0.1, line_width=0)
-    fig.add_hrect(y0=0.5, y1=1.0, fillcolor="red", opacity=0.1, line_width=0)
+
+def plot_trend():
+    # Создаем график с двумя осями Y (Вероятность и Пульс)
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    # Зоны стресса
+    fig.add_hrect(y0=0.0, y1=0.5, fillcolor="green", opacity=0.1, line_width=0, secondary_y=False)
+    fig.add_hrect(y0=0.5, y1=1.0, fillcolor="red", opacity=0.1, line_width=0, secondary_y=False)
 
     if st.session_state.history_time:
+        # Линия 1: Вероятность стресса
         fig.add_trace(go.Scatter(
-            x=st.session_state.history_time,
-            y=st.session_state.history_prob,
-            mode='lines+markers',
-            line=dict(color='#ff4b4b', width=3),
-            name="Вероятность"
-        ))
+            x=st.session_state.history_time, y=st.session_state.history_prob,
+            mode='lines+markers', line=dict(color='#ff4b4b', width=3), name="Вероятность стресса"
+        ), secondary_y=False)
 
-    fig.add_hline(y=0.5, line_dash="dash", line_color="white", annotation_text="Порог детекции (0.5)")
+        # Линия 2: Пульс (ЧСС)
+        fig.add_trace(go.Scatter(
+            x=st.session_state.history_time, y=st.session_state.history_hr,
+            mode='lines', line=dict(color='#00d4ff', width=2, dash='dot'), name="Пульс (уд/мин)", opacity=0.7
+        ), secondary_y=True)
+
+    fig.add_hline(y=0.5, line_dash="dash", line_color="white", secondary_y=False)
     fig.update_layout(
-        title="Динамика вероятности стресса",
-        yaxis_title="Вероятность",
-        xaxis_title="Время мониторинга (сек)",
-        yaxis=dict(range=[0, 1.05]),
-        height=350,
-        margin=dict(l=0, r=0, b=0, t=30),
-        template="plotly_dark"
+        title="Динамика состояния пациента",
+        height=350, margin=dict(l=0, r=0, b=0, t=30), template="plotly_dark",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
+    fig.update_yaxes(title_text="Вероятность", range=[0, 1.05], secondary_y=False)
+    fig.update_yaxes(title_text="Пульс", secondary_y=True, showgrid=False)
     return fig
 
 
@@ -98,6 +105,8 @@ mode = st.sidebar.radio("Режим анализа:", ["Fast (Быстрый)", 
 speed_sec = st.sidebar.slider("Шаг симуляции (сек):", 5, 30, 10, 5)
 
 is_fast = "Fast" in mode
+
+step_size_sec = speed_sec
 
 # Информация о модели в сайдбаре
 st.sidebar.markdown("---")
@@ -144,6 +153,7 @@ if st.session_state.is_running:
                 # Обновляем историю
                 current_time_sec = (st.session_state.current_idx - start_idx) // fs
                 st.session_state.history_prob.append(res['probability'])
+                st.session_state.history_hr.append(60000 / res['features']['mean_rr'])
                 st.session_state.history_time.append(current_time_sec)
                 st.session_state.history_proc_time.append(res['processing_time_sec'])
 
@@ -199,7 +209,8 @@ if st.session_state.last_result:
         # Вывод статистики производительности
         if st.session_state.history_proc_time:
             avg_time = np.mean(st.session_state.history_proc_time)
-            st.caption(f"⏱️ Среднее время обработки одного окна: **{avg_time:.3f} сек.**")
+            margin = step_size_sec - avg_time
+            st.caption(f"⏱️ Среднее время обработки окна: **{avg_time:.3f} сек.** | Запас до real-time: **{margin:.3f} сек.**")
 
 else:
     st.info("👈 Выберите пациента в меню слева и нажмите 'Старт' для начала симуляции потокового мониторинга.")

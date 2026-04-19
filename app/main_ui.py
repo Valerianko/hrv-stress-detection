@@ -23,7 +23,7 @@ if 'history_proc_time' not in st.session_state: st.session_state.history_proc_ti
 if 'last_result' not in st.session_state: st.session_state.last_result = None
 if 'prev_metrics' not in st.session_state: st.session_state.prev_metrics = None
 if 'current_subject' not in st.session_state: st.session_state.current_subject = None
-if 'history_hr' not in st.session_state: st.session_state.history_hr =[]
+if 'history_hr' not in st.session_state: st.session_state.history_hr = []
 
 
 @st.cache_resource
@@ -45,6 +45,7 @@ def reset_state(start_idx):
     st.session_state.history_prob = []
     st.session_state.history_time = []
     st.session_state.history_proc_time = []
+    st.session_state.history_hr =[]
     st.session_state.last_result = None
     st.session_state.prev_metrics = None
 
@@ -72,8 +73,8 @@ def plot_trend():
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     # Зоны стресса
-    fig.add_hrect(y0=0.0, y1=0.5, fillcolor="green", opacity=0.1, line_width=0, secondary_y=False)
-    fig.add_hrect(y0=0.5, y1=1.0, fillcolor="red", opacity=0.1, line_width=0, secondary_y=False)
+    fig.add_hrect(y0=0.0, y1=0.5, fillcolor="green", opacity=0.1, line_width=0)
+    fig.add_hrect(y0=0.5, y1=1.0, fillcolor="red", opacity=0.1, line_width=0)
 
     if st.session_state.history_time:
         # Линия 1: Вероятность стресса
@@ -133,7 +134,10 @@ if col_btn2.button("⏸ Пауза", use_container_width=True):
 analyzer = get_analyzer()
 fs = 700
 window_size = 60 * fs
-step_size = speed_sec * fs
+
+step_size_sec = speed_sec
+step_size = step_size_sec * fs
+is_fast = "Fast" in mode
 
 if st.session_state.is_running:
     if st.session_state.current_idx < len(ecg) - window_size:
@@ -168,7 +172,7 @@ st.title("🫀 Интеллектуальная система монитори�
 if st.session_state.last_result:
     res = st.session_state.last_result
     curr_f = res['features']
-    prev_f = st.session_state.prev_metrics
+    prev_f = st.session_state.prev_metrics or curr_f
 
     if res['status'] == "СТРЕСС":
         st.error(f"⚠️ **{res['status']}** | Вероятность: {res['probability']:.1%} | Анализ: {res['mode']}")

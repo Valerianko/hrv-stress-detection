@@ -4,5 +4,7 @@ venv/
 __pycache__/
 data/
 models_saved/
+logs/
 .env
 *.pkl
+*.log

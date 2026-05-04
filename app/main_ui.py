@@ -68,31 +68,67 @@ def plot_attractor(rr, delay=1):
 def plot_trend():
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-    # Зоны стресса
-    fig.add_hrect(y0=0.0, y1=0.5, fillcolor="green", opacity=0.1, line_width=0)
-    fig.add_hrect(y0=0.5, y1=1.0, fillcolor="red", opacity=0.1, line_width=0)
+    # Зона низкого риска (Покой) - Надежный метод через add_shape
+    fig.add_shape(
+        type="rect",
+        x0=0, x1=1, xref="paper",
+        y0=0.0, y1=0.5, yref="y",
+        fillcolor="rgba(46, 204, 113, 0.25)",  # Изумрудный с 25% непрозрачности
+        line_width=0,
+        layer="below"
+    )
+
+    # Зона высокого риска (Стресс)
+    fig.add_shape(
+        type="rect",
+        x0=0, x1=1, xref="paper",
+        y0=0.5, y1=1.05, yref="y",
+        fillcolor="rgba(255, 75, 75, 0.25)",  # Красный с 25% непрозрачности
+        line_width=0,
+        layer="below"
+    )
 
     if st.session_state.history_time:
         # Линия 1: Вероятность стресса
         fig.add_trace(go.Scatter(
-            x=st.session_state.history_time, y=st.session_state.history_prob,
-            mode='lines+markers', line=dict(color='#ff4b4b', width=3), name="Вероятность стресса"
+            x=st.session_state.history_time,
+            y=st.session_state.history_prob,
+            mode='lines+markers',
+            line=dict(color='#ff4b4b', width=3),
+            marker=dict(size=6),
+            name="Вероятность стресса"
         ), secondary_y=False)
 
         # Линия 2: Пульс (ЧСС)
         fig.add_trace(go.Scatter(
-            x=st.session_state.history_time, y=st.session_state.history_hr,
-            mode='lines', line=dict(color='#00d4ff', width=2, dash='dot'), name="Пульс (уд/мин)", opacity=0.7
+            x=st.session_state.history_time,
+            y=st.session_state.history_hr,
+            mode='lines',
+            line=dict(color='#00d4ff', width=2, dash='dot'),
+            name="Пульс (уд/мин)",
+            opacity=0.85
         ), secondary_y=True)
 
-    fig.add_hline(y=0.5, line_dash="dash", line_color="white", secondary_y=False)
+    # Линия порога
+    fig.add_hline(
+        y=0.5,
+        line_dash="dash",
+        line_color="white",
+        line_width=2,
+        secondary_y=False
+    )
+
     fig.update_layout(
         title="Динамика состояния пациента",
-        height=350, margin=dict(l=0, r=0, b=0, t=30), template="plotly_dark",
+        height=350,
+        margin=dict(l=0, r=0, b=0, t=30),
+        template="plotly_dark",
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
+
     fig.update_yaxes(title_text="Вероятность", range=[0, 1.05], secondary_y=False)
     fig.update_yaxes(title_text="Пульс", secondary_y=True, showgrid=False)
+
     return fig
 
 st.sidebar.title("⚙️ Настройки")

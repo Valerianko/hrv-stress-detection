@@ -49,25 +49,35 @@ def main():
     shap.summary_plot(shap_values, X_sample, show=False)
 
     # Локальная интерпретация (Local Explanation) для одного окна со стрессом
-    logger.info("Генерация локального объяснения (Local Explanation)...")
+    logger.info("Генерация локального объяснения (Waterfall Plot)...")
 
-    # Находим индекс окна, где реально был стресс
     stress_indices = df[df['target_label'] == 1].index
     if len(stress_indices) > 0:
-        sample_idx = stress_indices[0]
+        sample_idx = stress_indices[0]  # Берем первое окно стресса
         instance = X.iloc[sample_idx]
 
-        shap_val_single = explainer.shap_values(instance.to_frame())
+        # Для Waterfall нам нужен объект Explanation
+        shap_val_single = explainer.shap_values(instance)
 
-        base_value = explainer.expected_value
+        # Создаем объект Explanation вручную
+        explanation = shap.Explanation(
+            values=shap_val_single,
+            base_values=explainer.expected_value,
+            data=instance.values,
+            feature_names=X.columns
+        )
 
-        plt.figure(figsize=(12, 4))
-        shap.force_plot(base_value, shap_val_single, instance, matplotlib=True, show=False)
+        # Строим и сохраняем Waterfall plot
+        plt.figure(figsize=(10, 6))
+        shap.waterfall_plot(explanation, show=False)
 
         fig_path_local = os.path.join(FIGURES_DIR, 'shap_local_explanation.png')
+        plt.tight_layout()
         plt.savefig(fig_path_local, dpi=300, bbox_inches='tight')
         plt.close()
         logger.info(f"Локальное объяснение сохранено в: {fig_path_local}")
+    else:
+        logger.warning("Окна со стрессом не найдены, локальный график не построен.")
 
 
 if __name__ == "__main__":
